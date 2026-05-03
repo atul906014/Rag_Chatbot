@@ -4,7 +4,6 @@ python-dotenv
 huggingface_hub
 fastapi==0.104.1
 uvicorn==0.24.0
-streamlit==1.28.1
 requests==2.32.5
 pydantic>=2.7.4
 langchain_community==0.4.1
