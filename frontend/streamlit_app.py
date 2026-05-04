@@ -236,7 +236,7 @@ with st.sidebar:
     
     # Check API status
     try:
-        response = requests.get(f"{API_BASE_URL}/", timeout=2)
+        response = requests.get(f"{API_BASE_URL}/", timeout=60)
         api_status.markdown("""
             <div class="success-badge">✅ API Connected</div>
         """, unsafe_allow_html=True)
