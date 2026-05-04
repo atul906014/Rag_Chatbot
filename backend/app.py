@@ -33,24 +33,43 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+hf_token = os.getenv("HF_TOKEN")
+if not hf_token:
+    logger.error("HF_TOKEN environment variable is not set")
+    raise EnvironmentError("HF_TOKEN environment variable is required but not set")
+embedding_model = os.getenv("HF_EMBEDDING_MODEL")
+if not embedding_model:
+    logger.error("HF_EMBEDDING_MODEL environment variable is not set")
+    raise EnvironmentError("HF_EMBEDDING_MODEL environment variable is required but not set")
+embedding_api_url = os.getenv("EMBEDDING_API_URL")
+hf_model = os.getenv("HF_MODEL")
+if not hf_model:
+    logger.error("HF_MODEL environment variable is not set")
+    raise EnvironmentError("HF_MODEL environment variable is required but not set")
 
 # Initialize HuggingFace client
 client = InferenceClient(
-    api_key=os.environ["HF_TOKEN"],
+    api_key=hf_token
 )
 
 @lru_cache(maxsize=1)
 def get_vector_store():
-    BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
-    folder_path = os.path.join(BASE_DIR, "faiss_index") 
+    folder_path = "faiss_index"
+    
+    resume_context = load_resume_context()
+    embedding = HuggingFaceInferenceAPIEmbeddings(
+        api_key=hf_token,
+        model_name=embedding_model,
+        api_url=embedding_api_url if embedding_api_url else None
+    )
     if not os.path.exists(folder_path):
-        resume_context = load_resume_context()
+       
         splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200, separators=["\n\n", "\n", ". ", " ", ""])
         chunks = splitter.create_documents([resume_context])
-        vector_store = FAISS.from_documents(chunks, HuggingFaceInferenceAPIEmbeddings(model_name=os.environ["HF_EMBEDDING_MODEL"],api_key=os.environ["HF_TOKEN"]))
+        vector_store = FAISS.from_documents(chunks, embedding=embedding)
         vector_store.save_local(folder_path)
     else:
-        vector_store = FAISS.load_local(folder_path, HuggingFaceInferenceAPIEmbeddings(model_name=os.environ["HF_EMBEDDING_MODEL"],api_key=os.environ["HF_TOKEN"]), allow_dangerous_deserialization=True)
+        vector_store = FAISS.load_local(folder_path, embeddings=embedding, allow_dangerous_deserialization=True)
     return vector_store
 
 
@@ -71,10 +90,6 @@ def generate_context(question):
         return resume_context
     context = "\n\n".join([chunk.page_content for chunk in relevant_chunks])
     return context
-
-
-    
-    
 
 
 # Resume context
@@ -100,7 +115,7 @@ def call_hf(prompt_value):
     text = prompt_value.to_string()
     logger.info("Calling HuggingFace model with prompt length %d", len(text))
     completion = client.chat.completions.create(
-        model=os.environ["HF_MODEL"],
+        model=hf_model,
         messages=[
             {
                 "role": "user",

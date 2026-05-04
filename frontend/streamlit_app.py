@@ -203,7 +203,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # API endpoint
-API_BASE_URL = "https://rag-chatbot-cr7n.onrender.com"
+API_BASE_URL = "http://127.0.0.1:8000"
 
 # Title with enhanced styling
 st.markdown("""
@@ -251,9 +251,9 @@ with st.sidebar:
     st.markdown("### 📚 Quick Links")
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown("[📖 API Docs](https://rag-chatbot-cr7n.onrender.com//docs)")
+        st.markdown("[📖 API Docs](http://127.0.0.1:8000/docs)")
     with col2:
-        st.markdown("[🚀 API Swagger](https://rag-chatbot-cr7n.onrender.com//redoc)")
+        st.markdown("[🚀 API Swagger](http://127.0.0.1:8000/redoc)")
     
     st.divider()
     
