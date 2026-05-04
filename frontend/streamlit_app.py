@@ -203,7 +203,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # API endpoint
-API_BASE_URL = "https://rag-chatbot-cr7n.onrender.com/"
+API_BASE_URL = "https://rag-chatbot-cr7n.onrender.com"
 
 # Title with enhanced styling
 st.markdown("""
