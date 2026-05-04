@@ -7,7 +7,7 @@ from langchain_core.runnables import RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.document_loaders import Docx2txtLoader
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from functools import lru_cache
@@ -46,10 +46,10 @@ def get_vector_store():
         resume_context = load_resume_context()
         splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200, separators=["\n\n", "\n", ". ", " ", ""])
         chunks = splitter.create_documents([resume_context])
-        vector_store = FAISS.from_documents(chunks, HuggingFaceEmbeddings(model_name=os.environ["HF_EMBEDDING_MODEL"]))
+        vector_store = FAISS.from_documents(chunks, HuggingFaceInferenceAPIEmbeddings(model_name=os.environ["HF_EMBEDDING_MODEL"],api_key=os.environ["HF_TOKEN"]))
         vector_store.save_local(folder_path)
     else:
-        vector_store = FAISS.load_local(folder_path, HuggingFaceEmbeddings(model_name=os.environ["HF_EMBEDDING_MODEL"]), allow_dangerous_deserialization=True)
+        vector_store = FAISS.load_local(folder_path, HuggingFaceInferenceAPIEmbeddings(model_name=os.environ["HF_EMBEDDING_MODEL"],api_key=os.environ["HF_TOKEN"]), allow_dangerous_deserialization=True)
     return vector_store
 
 
