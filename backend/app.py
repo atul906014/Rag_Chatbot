@@ -41,7 +41,8 @@ client = InferenceClient(
 
 @lru_cache(maxsize=1)
 def get_vector_store():
-    folder_path = "faiss_index"
+    BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
+    folder_path = os.path.join(BASE_DIR, "faiss_index") 
     if not os.path.exists(folder_path):
         resume_context = load_resume_context()
         splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200, separators=["\n\n", "\n", ". ", " ", ""])
