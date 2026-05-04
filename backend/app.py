@@ -79,7 +79,7 @@ def generate_context(question):
 # Resume context
 
 def load_resume_context():
-    resume_path = "../Atul_Kumar_Resume_2.docx"
+    resume_path = "data/Atul_Kumar_Resume_2.docx"
     logger.info("Loading resume document from %s", resume_path)
     loader = Docx2txtLoader(resume_path)
     documents = loader.load()
