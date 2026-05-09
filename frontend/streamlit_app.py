@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import requests
 
@@ -203,7 +204,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # API endpoint
-API_BASE_URL = "https://rag-chatbot-cr7n.onrender.com"
+API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 
 # Title with enhanced styling
 st.markdown("""
@@ -251,9 +252,9 @@ with st.sidebar:
     st.markdown("### 📚 Quick Links")
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown("[📖 API Docs](https://rag-chatbot-cr7n.onrender.com/docs)")
+        st.markdown(f"[📖 API Docs]({API_BASE_URL}/docs)")
     with col2:
-        st.markdown("[🚀 API Swagger](https://rag-chatbot-cr7n.onrender.com/redoc)")
+        st.markdown(f"[🚀 API Swagger]({API_BASE_URL}/redoc)")
     
     st.divider()
     
@@ -329,7 +330,11 @@ with col1:
                         st.session_state.messages.append({"role": "assistant", "content": answer})
                         st.rerun()
                     else:
-                        st.error(f"❌ Error: {response.json().get('detail', 'Unknown error')}")
+                        try:
+                            error_detail = response.json().get('detail', response.text or 'Unknown error')
+                        except ValueError:
+                            error_detail = response.text or 'Unknown error'
+                        st.error(f"❌ Error: {error_detail}")
             except Exception as e:
                 st.error(f"❌ Connection Error: {str(e)}")
 
@@ -350,7 +355,11 @@ with col2:
                         st.session_state.messages.append({"role": "assistant", "content": answer})
                         st.rerun()
                     else:
-                        st.error(f"❌ Error: {response.json().get('detail', 'Unknown error')}")
+                        try:
+                            error_detail = response.json().get('detail', response.text or 'Unknown error')
+                        except ValueError:
+                            error_detail = response.text or 'Unknown error'
+                        st.error(f"❌ Error: {error_detail}")
             except Exception as e:
                 st.error(f"❌ Connection Error: {str(e)}")
 
@@ -359,39 +368,23 @@ st.markdown("---")
 st.markdown("### 📝 Custom Question")
 st.markdown("*Or ask your own question about Atul's profile:*")
 
-col1, col2 = st.columns([4, 1])
+with st.form(key="question_form"):
+    col1, col2, col3 = st.columns([4, 1, 1])
+    
+    with col1:
+        user_input = st.text_input(
+            "Enter your question:",
+            placeholder="💭 e.g., Tell me about Atul's experience?",
+            label_visibility="collapsed"
+        )
+    
+    with col2:
+        submit_button = st.form_submit_button("🚀 Ask", use_container_width=True)
+    
+    with col3:
+        clear_button = st.form_submit_button("🗑️ Clear", use_container_width=True)
 
-with col1:
-    user_input = st.text_input(
-        "Enter your question:",
-        placeholder="💭 e.g., Tell me about Atul's experience?",
-        label_visibility="collapsed"
-    )
-
-with col2:
-    if st.button("🚀 Ask", use_container_width=True, key="ask_button"):
-        if user_input.strip():
-            st.session_state.messages.append({"role": "user", "content": user_input})
-            
-            try:
-                with st.spinner("🔄 Getting answer..."):
-                    response = requests.post(
-                        f"{API_BASE_URL}/chat",
-                        json={"question": user_input},
-                        timeout=30
-                    )
-                    if response.status_code == 200:
-                        answer = response.json()["answer"]
-                        st.session_state.messages.append({"role": "assistant", "content": answer})
-                        st.rerun()
-                    else:
-                        st.error(f"❌ Error: {response.json().get('detail', 'Unknown error')}")
-            except Exception as e:
-                st.error(f"❌ Connection Error: {str(e)}")
-        else:
-            st.warning("⚠️ Please enter a question first!")
-
-if user_input:
+if submit_button and user_input.strip():
     st.session_state.messages.append({"role": "user", "content": user_input})
     
     try:
@@ -406,26 +399,18 @@ if user_input:
                 st.session_state.messages.append({"role": "assistant", "content": answer})
                 st.rerun()
             else:
-                st.error(f"Error: {response.json().get('detail', 'Unknown error')}")
+                try:
+                    error_detail = response.json().get('detail', response.text or 'Unknown error')
+                except ValueError:
+                    error_detail = response.text or 'Unknown error'
+                st.error(f"❌ Error: {error_detail}")
     except Exception as e:
-        st.error(f"Failed to connect to API: {str(e)}")
+        st.error(f"❌ Connection Error: {str(e)}")
 
-# Action buttons
-st.markdown("---")
-col1, col2, col3 = st.columns([1, 1, 1])
-
-with col1:
-    if st.button("🗑️ Clear History", use_container_width=True):
-        st.session_state.messages = []
-        st.success("✅ Chat history cleared!")
-        st.rerun()
-
-with col2:
-    if st.button("🔄 Refresh", use_container_width=True):
-        st.rerun()
-
-with col3:
-    st.markdown("---")
+if clear_button:
+    st.session_state.messages = []
+    st.success("✅ Chat history cleared!")
+    st.rerun()
 
 # Footer with enhanced styling
 st.markdown("""
