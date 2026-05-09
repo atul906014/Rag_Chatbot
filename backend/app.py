@@ -54,7 +54,7 @@ client = InferenceClient(
 
 @lru_cache(maxsize=1)
 def get_vector_store():
-    folder_path = "faiss_index"
+    folder_path = os.getenv("FAISS_INDEX_PATH", "faiss_index")
     
     resume_context = load_resume_context()
     embedding = HuggingFaceInferenceAPIEmbeddings(
@@ -81,11 +81,13 @@ def generate_context(question):
     logger.info("Generating context for question: %s", question)
    
     # load the FAISS vector store from local disk if it exists, otherwise create it and save it for future use
-    resume_context = get_resume_context()
-    vector_store = get_vector_store()   
-    relevant_chunks = vector_store.similarity_search(question, k=5)
+   
+    vector_store = get_vector_store()
+    retriever = vector_store.as_retriever(search_kwargs={"k": 5})
+    relevant_chunks = retriever.invoke(question)
     logger.info("Retrieved %d relevant chunks", len(relevant_chunks))
     if not relevant_chunks:
+        resume_context = get_resume_context()
         logger.warning("No relevant chunks found; using full resume context")
         return resume_context
     context = "\n\n".join([chunk.page_content for chunk in relevant_chunks])
@@ -114,7 +116,7 @@ class QuestionRequest(BaseModel):
 def call_hf(prompt_value):
     text = prompt_value.to_string()
     logger.info("Calling HuggingFace model with prompt length %d", len(text))
-    completion = client.chat.completions.create(
+    completion = client.chat_completion(
         model=hf_model,
         messages=[
             {
@@ -122,8 +124,9 @@ def call_hf(prompt_value):
                 "content": text,
             }
         ],
+        max_tokens=500
     )
-    return completion.choices[0].message.content
+    return completion['choices'][0]['message']['content']
 
 prompt_template = ChatPromptTemplate.from_template(
     f"""You are an AI assistant knowledgeable about Atul's professional profile.
@@ -169,17 +172,6 @@ def chat(request: QuestionRequest):
         logger.exception("Error handling chat request")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get('/predefined-questions')
-def get_predefined_questions():
-    questions = [
-    "What are Atul's main skills?",
-    "What certifications does Atul have?",
-    "What is Atul's educational background?",
-    "Tell me about Atul's experience",
-    "What projects has Atul worked on?",
-    "What is Atul's expertise in Agentic AI?",
-    ]
-    return {"questions": questions}
 
 if __name__ == '__main__':
     import uvicorn
