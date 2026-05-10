@@ -12,3 +12,5 @@ langchain-text-splitters==1.1.2
 docx2txt
 sentence-transformers
 faiss-cpu
+langchain_memory==0.1.0
+langchain_ollama
